@@ -7,10 +7,10 @@ from google.oauth2.service_account import Credentials
 scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
 
 # Load the JSON string, parse it into a Python dict
-creds_dict = json.loads(st.secrets["GOOGLE_CREDENTIALS"])
+#creds_dict = json.loads(st.secrets["GOOGLE_CREDENTIALS"])
 
 # Authorize with Google
-creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
+creds = Credentials.from_service_account_info(st.secrets["GOOGLE_CREDENTIALS"], scopes=scope)
 client = gspread.authorize(creds)
 # Open your sheet
 sheet = client.open("vox_status_dashboard").sheet1
