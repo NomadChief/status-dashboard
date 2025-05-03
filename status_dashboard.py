@@ -10,7 +10,11 @@ scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis
 #creds_dict = json.loads(st.secrets["GOOGLE_CREDENTIALS"])
 
 # Authorize with Google
-creds = Credentials.from_service_account_info(st.secrets["GOOGLE_CREDENTIALS"], scopes=scope)
+creds_raw = dict(st.secrets["GOOGLE_CREDENTIALS"])  # make a mutable copy
+creds_raw["private_key"] = creds_raw["private_key"].replace("\\n", "\n")
+
+creds = Credentials.from_service_account_info(creds_raw, scopes=scope)
+
 client = gspread.authorize(creds)
 # Open your sheet
 sheet = client.open("vox_status_dashboard").sheet1
