@@ -1,8 +1,33 @@
 import streamlit as st
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
-st.set_page_config(page_title="Vox's Status", layout="centered")
+# Set up credentials
+scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 
+import json
+creds_dict = json.loads(st.secrets["GOOGLE_CREDENTIALS"])
+creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+
+client = gspread.authorize(creds)
+sheet = client.open("vox_status_dashboard").sheet1
+
+# Read values from the sheet
+data = sheet.get_all_records()
+index_values = {row['Index']: row['Value'] for row in data}
+
+# UI logic
 st.title("🧠 Vox's Status Dashboard")
+new_values = {}
+for index in index_values:
+    st.subheader(index)
+    value = st.slider(index, 0, 10, index_values[index])
+    new_values[index] = value
+
+if st.button("💾 Save"):
+    for i, (index, val) in enumerate(new_values.items()):
+        sheet.update_cell(i + 2, 2, val)
+    st.success("Status updated.")
 
 # Helper function
 def describe(index, value):
