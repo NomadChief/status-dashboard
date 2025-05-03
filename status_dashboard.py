@@ -1,3 +1,4 @@
+import json
 import streamlit as st
 import gspread
 from google.oauth2.service_account import Credentials
@@ -5,8 +6,8 @@ from google.oauth2.service_account import Credentials
 # Set up credentials
 scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
 
-import json
-creds_dict = st.secrets["GOOGLE_CREDENTIALS"]
+# Load credentials from Streamlit secrets
+creds_dict = json.loads(st.secrets["GOOGLE_CREDENTIALS"])
 creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
 client = gspread.authorize(creds)
 sheet = client.open("vox_status_dashboard").sheet1
