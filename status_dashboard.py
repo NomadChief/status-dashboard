@@ -150,6 +150,13 @@ if st.button("💾 Save", use_container_width=True):
     try:
         for i, (index, val) in enumerate(new_values.items()):
             sheet.update_cell(i + 2, 2, val)
+        
+        #Append History
+        history_sheet = client.open_by_key(SHEET_ID).worksheet("History")
+        now_str = datetime.now(TIMEZONE).strftime("%Y-%m-%d %H:%M:%S")
+        history_row = [now_str] + [new_values.get(field, "") for field in ["Mood", "Autistic Battery", "Emotional State", "Physical Pain"]]
+        history_sheet.append_row(history_row)
+        
         st.success("Status updated.")
     except Exception as e:
         st.error(f"Error updating sheet: {e}")
