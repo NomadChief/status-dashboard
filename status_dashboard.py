@@ -2,6 +2,8 @@ import json
 import streamlit as st
 import gspread
 from google.oauth2.service_account import Credentials
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 
 
@@ -23,7 +25,8 @@ last_modified = file_metadata.get("modifiedTime", "")  # e.g., '2024-04-29T15:37
 # Convert to readable format
 from datetime import datetime
 last_modified_dt = datetime.fromisoformat(last_modified.replace("Z", "+00:00"))
-last_updated_str = last_modified_dt.strftime("%Y-%m-%d %H:%M")
+last_modified_cst = last_modified_dt.astimezone(ZoneInfo("America/Chicago"))
+last_updated_str = last_modified_cst.strftime("%Y-%m-%d %I:%M %p CST")
 
 # now open your sheet
 sheet = client.open_by_key(sheet_id).sheet1
