@@ -1,169 +1,150 @@
 import json
-import streamlit as st
-st.set_page_config(page_title="Status Dashboard", layout="centered")
 import gspread
-from google.oauth2.service_account import Credentials
+import streamlit as st
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from streamlit_autorefresh import st_autorefresh
+from googleapiclient.discovery import build
+from google.oauth2.service_account import Credentials
 
-# Toggle to enable/disable auto-refresh
+
+# ----------------------------
+# 🛠️ Config and Setup
+# ----------------------------
+
+st.set_page_config(page_title="Status Dashboard", layout="centered")
 autorefresh_enabled = st.sidebar.checkbox("🔄 Auto-refresh every 2 min", value=True)
 if autorefresh_enabled:
     st_autorefresh(interval=120_000, key="refresh_dashboard")
 
-# Set up credentials
-scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+SHEET_ID = "1j7fEEf6jw8UcXcGlbgnE5BoxoP58wDRWCLr1XQgi-jM"
+TIMEZONE = ZoneInfo("America/Chicago")
+SCOPES = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
 
-creds = Credentials.from_service_account_info(st.secrets["GOOGLE_CREDENTIALS"], scopes=scope)
+
+# ----------------------------
+# 🔐 Authentication and APIs
+# ----------------------------
+
+def load_credentials():
+    return Credentials.from_service_account_info(
+        st.secrets["GOOGLE_CREDENTIALS"], scopes=SCOPES
+    )
+
+creds = load_credentials()
 client = gspread.authorize(creds)
-
-from googleapiclient.discovery import build
-# Build the Drive API client
-drive_service = build('drive', 'v3', credentials=creds)
-
-# Get the file metadata
-sheet_id = "1j7fEEf6jw8UcXcGlbgnE5BoxoP58wDRWCLr1XQgi-jM"
-file_metadata = drive_service.files().get(fileId=sheet_id, fields='modifiedTime').execute()
-last_modified = file_metadata.get("modifiedTime", "")  # e.g., '2024-04-29T15:37:29.357Z'
-
-# Convert to readable format
-last_modified_dt = datetime.fromisoformat(last_modified.replace("Z", "+00:00"))
-last_modified_cst = last_modified_dt.astimezone(ZoneInfo("America/Chicago"))
-last_updated_str = last_modified_cst.strftime("%Y-%m-%d %I:%M %p CST")
-
-# now open your sheet
-sheet = client.open_by_key(sheet_id).sheet1
-
-# Read values from the sheet
-data = sheet.get_all_records()
-if not data or 'Index' not in data[0] or 'Value' not in data[0]:
-    st.error("Sheet must have 'Index' and 'Value' headers.")
-    st.stop()
-index_values = {row['Index']: row['Value'] for row in data}
+drive_service = build("drive", "v3", credentials=creds)
 
 
-# Color scale
+# ----------------------------
+# 🕒 Timestamp Utility
+# ----------------------------
+
+def get_last_modified_str(file_id):
+    metadata = drive_service.files().get(fileId=file_id, fields="modifiedTime").execute()
+    raw_time = metadata.get("modifiedTime", "")
+    dt_utc = datetime.fromisoformat(raw_time.replace("Z", "+00:00"))
+    dt_cst = dt_utc.astimezone(TIMEZONE)
+    delta = datetime.now(TIMEZONE) - dt_cst
+
+    if delta < timedelta(minutes=1):
+        time_ago = "(just now)"
+    elif delta < timedelta(hours=1):
+        time_ago = f"({int(delta.total_seconds() // 60)} min ago)"
+    elif delta < timedelta(days=1):
+        time_ago = f"({int(delta.total_seconds() // 3600)} hrs ago)"
+    else:
+        time_ago = f"({delta.days} days ago)"
+
+    return dt_cst.strftime("%A, %b %d %I:%M %p CST") + f" {time_ago}"
+
+
+# ----------------------------
+# 🧠 Sheet Loading & Parsing
+# ----------------------------
+
+def load_status_data(sheet):
+    records = sheet.get_all_records()
+    if not records or 'Index' not in records[0] or 'Value' not in records[0]:
+        st.error("Sheet must have 'Index' and 'Value' headers.")
+        st.stop()
+    return {row['Index']: row['Value'] for row in records}
+
+
+# ----------------------------
+# 🎨 UI Helpers
+# ----------------------------
+
 def colorize(value, index):
     if index == "Physical Pain":
-        # Lower is better
-        if value <= 2:
-            return "🟢"
-        elif value <= 5:
-            return "🟡"
-        elif value <= 8:
-            return "🟠"
-        else:
-            return "🔴"
-
+        return "🟢" if value <= 2 else "🟡" if value <= 5 else "🟠" if value <= 8 else "🔴"
     elif index == "Mood":
-        # Gradient: Purple → Blue → Green → Yellow → Orange → Red
-        if value <= 1:
-            return "🟣"  # Deepest depression
-        elif value <= 3:
-            return "🔵"
-        elif value <= 5:
-            return "🟢"
-        elif value <= 7:
-            return "🟡"
-        elif value <= 9:
-            return "🟠"
-        else:
-            return "🔴"  # Full mania
-
+        return "🟣" if value <= 1 else "🔵" if value <= 3 else "🟢" if value <= 5 else "🟡" if value <= 7 else "🟠" if value <= 9 else "🔴"
     else:
-        # Default: higher is better
-        if value <= 2:
-            return "🔴"
-        elif value <= 5:
-            return "🟡"
-        elif value <= 8:
-            return "🟢"
-        else:
-            return "🔵"
+        return "🔴" if value <= 2 else "🟡" if value <= 5 else "🟢" if value <= 8 else "🔵"
 
-# Helper function
 def describe(index, value):
-    mood_desc = [
-        "Deepest depression", "Very low", "Low", "Subdued", "Flat",
-        "Neutral", "Slightly elevated", "High energy", "Very high", "Hypomania", "Full mania"
-    ]
-    battery_desc = [
-        "Non-verbal, withdrawn", "Exhausted", "Overwhelmed", "Wary", "Tired",
-        "Functional", "Coping", "Socially available", "Engaged", "Fully charged", "Charismatic"
-    ]
-    emotion_desc = [
-        "Emotionally unsafe", "Raw", "Vulnerable", "Tense", "Guarded",
-        "Neutral", "Warm", "Connected", "Engaged", "Open", "Radiant"
-    ]
-    pain_desc = [
-        "No pain", "Minor stubbed toe", "Mild chronic", "Nagging", "Disruptive",
-        "Severe", "Drastic limitations", "Barely functioning", "Crippling", "Unbearable", "Max pain"
-    ]
-
-    all_desc = {
-        "Mood": mood_desc,
-        "Autistic Battery": battery_desc,
-        "Emotional State": emotion_desc,
-        "Physical Pain": pain_desc
+    descriptions = {
+        "Mood": [
+            "Deepest depression", "Very low", "Low", "Subdued", "Flat",
+            "Neutral", "Slightly elevated", "High energy", "Very high", "Hypomania", "Full mania"
+        ],
+        "Autistic Battery": [
+            "Non-verbal, withdrawn", "Exhausted", "Overwhelmed", "Wary", "Tired",
+            "Functional", "Coping", "Socially available", "Engaged", "Fully charged", "Charismatic"
+        ],
+        "Emotional State": [
+            "Emotionally unsafe", "Raw", "Vulnerable", "Tense", "Guarded",
+            "Neutral", "Warm", "Connected", "Engaged", "Open", "Radiant"
+        ],
+        "Physical Pain": [
+            "No pain", "Minor stubbed toe", "Mild chronic", "Nagging", "Disruptive",
+            "Severe", "Drastic limitations", "Barely functioning", "Crippling", "Unbearable", "Max pain"
+        ]
     }
+    return descriptions.get(index, ["Unknown"] * 11)[value]
 
-    return all_desc[index][value]
 
-# UI logic
-st.title("🧠  Status")
+# ----------------------------
+# 📊 UI Rendering
+# ----------------------------
 
-# Calculate "time ago"
-now_cst = datetime.now(ZoneInfo("America/Chicago"))
-delta = now_cst - last_modified_cst
+def render_status_summary(data):
+    st.markdown("### Current Status")
+    for index, val in data.items():
+        emoji = colorize(val, index)
+        desc = describe(index, val)
+        st.markdown(f"<div style='font-size:0.9em; padding:2px 0;'><b>{emoji} {index}:</b> {desc}</div>", unsafe_allow_html=True)
 
-if delta < timedelta(minutes=1):
-    time_ago = "(just now)"
-elif delta < timedelta(hours=1):
-    mins = int(delta.total_seconds() // 60)
-    time_ago = f"({mins} min ago)"
-elif delta < timedelta(days=1):
-    hrs = int(delta.total_seconds() // 3600)
-    time_ago = f"({hrs} hrs ago)"
-else:
-    days = delta.days
-    time_ago = f"({days} days ago)"
+def render_adjustment_controls(data):
+    st.markdown("### Adjust Values")
+    updated = {}
+    for index, default_val in data.items():
+        st.markdown(f"**{index}**")
+        val = st.slider(index, 0, 10, default_val, key=index)
+        updated[index] = val
+        st.markdown(f"<span style='font-size:0.8em;'>{colorize(val, index)} {describe(index, val)}</span>", unsafe_allow_html=True)
+        st.markdown("<hr style='margin:4px 0;'>", unsafe_allow_html=True)
+    return updated
 
-# Final timestamp string
-last_updated_str = last_modified_cst.strftime("%A, %b %d %I:%M %p CST") + f" {time_ago}"
-# Timestamp display
-st.caption(f"📱 Summary below (Last updated: {last_updated_str})")
 
-# Section 1: Current Status Summary
-st.markdown("### Current Status")
+# ----------------------------
+# 🚀 Main Logic
+# ----------------------------
 
-for index in index_values:
-    val = index_values[index]
-    emoji = colorize(val, index)
-    desc = describe(index, val)
-    st.markdown(
-        f"<div style='font-size:0.9em; padding:2px 0;'><b>{emoji} {index}:</b> {desc}</div>",
-        unsafe_allow_html=True,
-    )
+st.title("🧠 Status")
+st.caption(f"📱 Summary below (Last updated: {get_last_modified_str(SHEET_ID)})")
 
-# Divider
+sheet = client.open_by_key(SHEET_ID).sheet1
+index_values = load_status_data(sheet)
+
+render_status_summary(index_values)
 st.markdown("---")
+new_values = render_adjustment_controls(index_values)
 
-# Section 2: Adjustment Controls
-st.markdown("### Adjust Values")
-new_values = {}
-
-for index in index_values:
-    st.markdown(f"**{index}**")
-    val = st.slider(index, 0, 10, index_values[index], key=index)
-    new_values[index] = val
-    st.markdown(
-        f"<span style='font-size:0.8em;'>{colorize(val, index)} {describe(index, val)}</span>",
-        unsafe_allow_html=True,
-    )
-    st.markdown("<hr style='margin:4px 0;'>", unsafe_allow_html=True)
-
-# Save Button
 st.markdown("<br>", unsafe_allow_html=True)
 if st.button("💾 Save", use_container_width=True):
     try:
@@ -172,6 +153,3 @@ if st.button("💾 Save", use_container_width=True):
         st.success("Status updated.")
     except Exception as e:
         st.error(f"Error updating sheet: {e}")
-
-
-
