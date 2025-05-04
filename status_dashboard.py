@@ -1,5 +1,6 @@
 import json
 import streamlit as st
+st.set_page_config(page_title="Status Dashboard", layout="centered")
 import gspread
 from google.oauth2.service_account import Credentials
 from datetime import datetime
@@ -107,7 +108,6 @@ def describe(index, value):
     return all_desc[index][value]
 
 # UI logic
-st.set_page_config(page_title="Status Dashboard", layout="centered")
 st.title("🧠  Status")
 
 # Calculate "time ago"
