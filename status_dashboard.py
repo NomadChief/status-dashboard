@@ -11,8 +11,22 @@ scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis
 creds = Credentials.from_service_account_info(st.secrets["GOOGLE_CREDENTIALS"], scopes=scope)
 client = gspread.authorize(creds)
 
+from googleapiclient.discovery import build
+# Build the Drive API client
+drive_service = build('drive', 'v3', credentials=creds)
+
+# Get the file metadata
+sheet_id = "1j7fEEf6jw8UcXcGlbgnE5BoxoP58wDRWCLr1XQgi-jM"
+file_metadata = drive_service.files().get(fileId=sheet_id, fields='modifiedTime').execute()
+last_modified = file_metadata.get("modifiedTime", "")  # e.g., '2024-04-29T15:37:29.357Z'
+
+# Convert to readable format
+from datetime import datetime
+last_modified_dt = datetime.fromisoformat(last_modified.replace("Z", "+00:00"))
+last_updated_str = last_modified_dt.strftime("%Y-%m-%d %H:%M")
+
 # now open your sheet
-sheet = client.open_by_key("1j7fEEf6jw8UcXcGlbgnE5BoxoP58wDRWCLr1XQgi-jM").sheet1
+sheet = client.open_by_key(sheet_id).sheet1
 
 # Read values from the sheet
 data = sheet.get_all_records()
@@ -68,8 +82,7 @@ st.set_page_config(page_title="Status Dashboard", layout="centered")
 st.title("🧠 Vox Status")
 
 # Timestamp display
-now = datetime.now().strftime("%Y-%m-%d %H:%M")
-st.caption(f"📱 Summary below (Last updated: {now}). Scroll down to adjust.")
+st.caption(f"📱 Summary below (Last updated: {last_updated_str}). Scroll down to adjust.")
 
 # Section 1: Current Status Summary
 st.markdown("### Current Status")
