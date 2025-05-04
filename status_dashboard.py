@@ -62,12 +62,16 @@ def describe(index, value):
     return all_desc[index][value]
 
 # UI logic
+from datetime import datetime
+
 st.set_page_config(page_title="Status Dashboard", layout="centered")
 st.title("🧠 Vox Status")
 
-st.caption("📱 Summary below. Scroll to adjust and save.")
+# Timestamp display
+now = datetime.now().strftime("%Y-%m-%d %H:%M")
+st.caption(f"📱 Summary below (Last updated: {now}). Scroll down to adjust.")
 
-# Section 1: Compact Summary
+# Section 1: Current Status Summary
 st.markdown("### Current Status")
 
 for index in index_values:
