@@ -10,7 +10,7 @@ creds = Credentials.from_service_account_info(st.secrets["GOOGLE_CREDENTIALS"], 
 client = gspread.authorize(creds)
 
 # now open your sheet
-sheet = client.open("status_dashboard").sheet1
+sheet = client.open_by_key("1j7fEEf6jw8UcXcGlbgnE5BoxoP58wDRWCLr1XQgi-jM").sheet1
 
 # Read values from the sheet
 data = sheet.get_all_records()
