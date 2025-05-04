@@ -40,15 +40,43 @@ index_values = {row['Index']: row['Value'] for row in data}
 
 
 # Color scale
-def colorize(value):
-    if value <= 2:
-        return "🔴"
-    elif value <= 5:
-        return "🟡"
-    elif value <= 8:
-        return "🟢"
+def colorize(value, index):
+    if index == "Physical Pain":
+        # Lower is better
+        if value <= 2:
+            return "🟢"
+        elif value <= 5:
+            return "🟡"
+        elif value <= 8:
+            return "🟠"
+        else:
+            return "🔴"
+
+    elif index == "Mood":
+        # Gradient: Purple → Blue → Green → Yellow → Orange → Red
+        if value <= 1:
+            return "🟣"  # Deepest depression
+        elif value <= 3:
+            return "🔵"
+        elif value <= 5:
+            return "🟢"
+        elif value <= 7:
+            return "🟡"
+        elif value <= 9:
+            return "🟠"
+        else:
+            return "🔴"  # Full mania
+
     else:
-        return "🔵"
+        # Default: higher is better
+        if value <= 2:
+            return "🔴"
+        elif value <= 5:
+            return "🟡"
+        elif value <= 8:
+            return "🟢"
+        else:
+            return "🔵"
 
 # Helper function
 def describe(index, value):
@@ -92,7 +120,7 @@ st.markdown("### Current Status")
 
 for index in index_values:
     val = index_values[index]
-    emoji = colorize(val)
+    emoji = colorize(val, index)
     desc = describe(index, val)
     st.markdown(
         f"<div style='font-size:0.9em; padding:2px 0;'><b>{emoji} {index}:</b> {desc}</div>",
@@ -111,7 +139,7 @@ for index in index_values:
     val = st.slider(index, 0, 10, index_values[index], key=index)
     new_values[index] = val
     st.markdown(
-        f"<span style='font-size:0.8em;'>{colorize(val)} {describe(index, val)}</span>",
+        f"<span style='font-size:0.8em;'>{colorize(val, index)} {describe(index, val)}</span>",
         unsafe_allow_html=True,
     )
     st.markdown("<hr style='margin:4px 0;'>", unsafe_allow_html=True)
