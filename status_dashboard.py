@@ -3,7 +3,7 @@ import streamlit as st
 import gspread
 from google.oauth2.service_account import Credentials
 
-st.set_page_config(page_title="Status Dashboard", layout="centered")
+
 
 # Set up credentials
 scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
@@ -62,22 +62,33 @@ def describe(index, value):
     return all_desc[index][value]
 
 # UI logic
+st.set_page_config(page_title="Status Dashboard", layout="centered")
 st.title("🧠 Status Dashboard")
+st.markdown("Adjust sliders and tap Save. All changes are synced live.")
+
 new_values = {}
+
 for index in index_values:
-   st.markdown(f"**{colorize(index_values[index])} {index}**")
-    col1, col2 = st.columns([3, 1])
+    value = st.slider(index, 0, 10, index_values[index], key=index)
+
+    # Use columns to reduce vertical height on mobile
+    col1, col2 = st.columns([1, 3])
     with col1:
-        value = st.slider(index, 0, 10, index_values[index], key=index)
+        st.markdown(f"{colorize(value)}")
     with col2:
-        st.markdown(f"<div style='text-align:right;'>{describe(index, value)}</div>", unsafe_allow_html=True)
+        st.markdown(f"<span style='font-size:0.9em'>{describe(index, value)}</span>", unsafe_allow_html=True)
 
     new_values[index] = value
+    st.markdown("---")
 
-if st.button("💾 Save"):
-    for i, (index, val) in enumerate(new_values.items()):
-        sheet.update_cell(i + 2, 2, val)
-    st.success("Status updated.")
+# Save button at the bottom
+if st.button("💾 Save", use_container_width=True):
+    try:
+        for i, (index, val) in enumerate(new_values.items()):
+            sheet.update_cell(i + 2, 2, val)
+        st.success("Status updated.")
+    except Exception as e:
+        st.error(f"Error updating sheet: {e}")
 
 
 
