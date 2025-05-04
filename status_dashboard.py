@@ -3,6 +3,8 @@ import streamlit as st
 import gspread
 from google.oauth2.service_account import Credentials
 
+st.set_page_config(page_title="Status Dashboard", layout="centered")
+
 # Set up credentials
 scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
 
@@ -63,9 +65,13 @@ def describe(index, value):
 st.title("🧠 Status Dashboard")
 new_values = {}
 for index in index_values:
-    st.subheader(f"🔷 {index}")
-    value = st.slider(index, 0, 10, index_values[index])
-    st.write(f"{colorize(value)} **{describe(index, value)}**")
+   st.markdown(f"**{colorize(index_values[index])} {index}**")
+col1, col2 = st.columns([3, 1])
+with col1:
+    value = st.slider(index, 0, 10, index_values[index], key=index)
+with col2:
+    st.markdown(f"<div style='text-align:right;'>{describe(index, value)}</div>", unsafe_allow_html=True)
+
     new_values[index] = value
 
 if st.button("💾 Save"):
