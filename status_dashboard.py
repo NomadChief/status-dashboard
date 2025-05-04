@@ -23,7 +23,6 @@ file_metadata = drive_service.files().get(fileId=sheet_id, fields='modifiedTime'
 last_modified = file_metadata.get("modifiedTime", "")  # e.g., '2024-04-29T15:37:29.357Z'
 
 # Convert to readable format
-from datetime import datetime
 last_modified_dt = datetime.fromisoformat(last_modified.replace("Z", "+00:00"))
 last_modified_cst = last_modified_dt.astimezone(ZoneInfo("America/Chicago"))
 last_updated_str = last_modified_cst.strftime("%Y-%m-%d %I:%M %p CST")
@@ -107,8 +106,6 @@ def describe(index, value):
     return all_desc[index][value]
 
 # UI logic
-from datetime import datetime
-
 st.set_page_config(page_title="Status Dashboard", layout="centered")
 st.title("🧠  Status")
 
