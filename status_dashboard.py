@@ -3,7 +3,7 @@ import streamlit as st
 st.set_page_config(page_title="Status Dashboard", layout="centered")
 import gspread
 from google.oauth2.service_account import Credentials
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from streamlit_autorefresh import st_autorefresh
 
