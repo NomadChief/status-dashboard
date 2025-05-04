@@ -4,8 +4,9 @@ import gspread
 from google.oauth2.service_account import Credentials
 from datetime import datetime
 from zoneinfo import ZoneInfo
+from streamlit_autorefresh import st_autorefresh
 
-
+st_autorefresh(interval=120000, key="refresh_dashboard")
 
 # Set up credentials
 scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
@@ -109,8 +110,26 @@ def describe(index, value):
 st.set_page_config(page_title="Status Dashboard", layout="centered")
 st.title("🧠  Status")
 
+# Calculate "time ago"
+now_cst = datetime.now(ZoneInfo("America/Chicago"))
+delta = now_cst - last_modified_cst
+
+if delta < timedelta(minutes=1):
+    time_ago = "(just now)"
+elif delta < timedelta(hours=1):
+    mins = int(delta.total_seconds() // 60)
+    time_ago = f"({mins} min ago)"
+elif delta < timedelta(days=1):
+    hrs = int(delta.total_seconds() // 3600)
+    time_ago = f"({hrs} hrs ago)"
+else:
+    days = delta.days
+    time_ago = f"({days} days ago)"
+
+# Final timestamp string
+last_updated_str = last_modified_cst.strftime("%A, %b %d %I:%M %p CST") + f" {time_ago}"
 # Timestamp display
-st.caption(f"📱 Summary below (Last updated: {last_updated_str}). Scroll down to adjust.")
+st.caption(f"📱 Summary below (Last updated: {last_updated_str})")
 
 # Section 1: Current Status Summary
 st.markdown("### Current Status")
