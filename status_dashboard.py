@@ -64,24 +64,28 @@ def describe(index, value):
 # UI logic
 st.set_page_config(page_title="Status Dashboard", layout="centered")
 st.title("🧠 Status Dashboard")
-st.markdown("Adjust sliders and tap Save. All changes are synced live.")
+
+# Compact instruction
+st.caption("Set status below. Tap Save to update.")
 
 new_values = {}
 
 for index in index_values:
+    # Compact layout
     value = st.slider(index, 0, 10, index_values[index], key=index)
 
-    # Use columns to reduce vertical height on mobile
-    col1, col2 = st.columns([1, 3])
-    with col1:
-        st.markdown(f"{colorize(value)}")
-    with col2:
-        st.markdown(f"<span style='font-size:0.9em'>{describe(index, value)}</span>", unsafe_allow_html=True)
+    # Fit emoji + description on a single line
+    emoji = colorize(value)
+    description = describe(index, value)
+    st.markdown(
+        f"<div style='font-size:0.85em; margin-top:-12px;'>{emoji} {description}</div>",
+        unsafe_allow_html=True,
+    )
 
     new_values[index] = value
-    st.markdown("---")
+    st.markdown("<hr style='margin:4px 0;'>", unsafe_allow_html=True)
 
-# Save button at the bottom
+# Save button
 if st.button("💾 Save", use_container_width=True):
     try:
         for i, (index, val) in enumerate(new_values.items()):
