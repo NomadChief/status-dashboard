@@ -63,29 +63,33 @@ def describe(index, value):
 
 # UI logic
 st.set_page_config(page_title="Status Dashboard", layout="centered")
-st.title("🧠")
-
-# Compact instruction
-st.caption("Set status below. Tap Save to update.")
+st.title("🧠 Vox")
+st.caption("Tap to adjust. Hit save when done.")
 
 new_values = {}
 
+# Compact scale as list of ints 0–10
+scale = list(range(11))
+
 for index in index_values:
-    # Compact layout
-    value = st.slider(index, 0, 10, index_values[index], key=index)
-
-    # Fit emoji + description on a single line
-    emoji = colorize(value)
-    description = describe(index, value)
-    st.markdown(
-        f"<div style='font-size:0.85em; margin-top:-12px;'>{emoji} {description}</div>",
-        unsafe_allow_html=True,
-    )
-
-    new_values[index] = value
-    st.markdown("<hr style='margin:4px 0;'>", unsafe_allow_html=True)
+    col1, col2 = st.columns([1, 4])
+    with col1:
+        st.markdown(f"<div style='font-size:1.2em;'>{colorize(index_values[index])}</div>", unsafe_allow_html=True)
+    with col2:
+        val = st.select_slider(
+            label="",
+            options=scale,
+            value=index_values[index],
+            key=index,
+        )
+        st.markdown(
+            f"<div style='font-size:0.8em; margin-top:-6px;'>{describe(index, val)}</div>",
+            unsafe_allow_html=True,
+        )
+    new_values[index] = val
 
 # Save button
+st.markdown("<br>", unsafe_allow_html=True)
 if st.button("💾 Save", use_container_width=True):
     try:
         for i, (index, val) in enumerate(new_values.items()):
