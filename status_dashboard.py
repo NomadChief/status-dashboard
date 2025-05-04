@@ -31,20 +31,6 @@ def colorize(value):
     else:
         return "🔵"
 
-# UI logic
-st.title("🧠 Status Dashboard")
-new_values = {}
-for index in index_values:
-    st.subheader(f"🔷 {index}")
-    value = st.slider(index, 0, 10, index_values[index])
-    st.write(f"{colorize(value)} **{describe(index, value)}**")
-    new_values[index] = value
-
-if st.button("💾 Save"):
-    for i, (index, val) in enumerate(new_values.items()):
-        sheet.update_cell(i + 2, 2, val)
-    st.success("Status updated.")
-
 # Helper function
 def describe(index, value):
     mood_desc = [
@@ -72,5 +58,20 @@ def describe(index, value):
     }
 
     return all_desc[index][value]
+
+# UI logic
+st.title("🧠 Status Dashboard")
+new_values = {}
+for index in index_values:
+    st.subheader(f"🔷 {index}")
+    value = st.slider(index, 0, 10, index_values[index])
+    st.write(f"{colorize(value)} **{describe(index, value)}**")
+    new_values[index] = value
+
+if st.button("💾 Save"):
+    for i, (index, val) in enumerate(new_values.items()):
+        sheet.update_cell(i + 2, 2, val)
+    st.success("Status updated.")
+
 
 
