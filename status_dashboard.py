@@ -7,7 +7,10 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from streamlit_autorefresh import st_autorefresh
 
-st_autorefresh(interval=120000, key="refresh_dashboard")
+# Toggle to enable/disable auto-refresh
+autorefresh_enabled = st.sidebar.checkbox("🔄 Auto-refresh every 2 min", value=True)
+if autorefresh_enabled:
+    st_autorefresh(interval=120_000, key="refresh_dashboard")
 
 # Set up credentials
 scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
