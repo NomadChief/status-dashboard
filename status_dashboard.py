@@ -110,7 +110,7 @@ def describe(index, value):
 from datetime import datetime
 
 st.set_page_config(page_title="Status Dashboard", layout="centered")
-st.title("🧠 Vox Status")
+st.title("🧠  Status")
 
 # Timestamp display
 st.caption(f"📱 Summary below (Last updated: {last_updated_str}). Scroll down to adjust.")
