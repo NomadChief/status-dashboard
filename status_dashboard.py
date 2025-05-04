@@ -113,6 +113,7 @@ st.title("🧠  Status")
 # Calculate "time ago"
 now_cst = datetime.now(ZoneInfo("America/Chicago"))
 delta = now_cst - last_modified_cst
+time_ago = "(just now)"
 
 if delta < timedelta(minutes=1):
     time_ago = "(just now)"
