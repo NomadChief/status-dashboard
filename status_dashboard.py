@@ -151,10 +151,17 @@ if st.button("💾 Save", use_container_width=True):
         for i, (index, val) in enumerate(new_values.items()):
             sheet.update_cell(i + 2, 2, val)
         
-        #Append History
-        history_sheet = client.open_by_key(SHEET_ID).worksheet("History")
-        now_str = datetime.now(TIMEZONE).strftime("%Y-%m-%d %H:%M:%S")
-        history_row = [now_str] + [new_values.get(field, "") for field in ["Mood", "Autistic Battery", "Emotional State", "Physical Pain"]]
+        # Log update to History tab
+        try:
+            history_sheet = client.open_by_key(SHEET_ID).worksheet("History")
+        except gspread.exceptions.WorksheetNotFound:
+             # Create it with headers if it doesn't exist
+            history_sheet = client.open_by_key(sheet_id).add_worksheet(title="History", rows="1000", cols="6")
+            history_sheet.append_row(["Timestamp", "Mood", "Autistic Battery", "Emotional State", "Physical Pain"])
+            
+        # Append current values with timestamp
+        now_str = datetime.now(ZoneInfo("America/Chicago")).strftime("%Y-%m-%d %H:%M:%S")
+        history_row = [now_str] + [new_values.get(key, "") for key in ["Mood", "Autistic Battery", "Emotional State", "Physical Pain"]]
         history_sheet.append_row(history_row)
         
         st.success("Status updated.")
