@@ -63,7 +63,7 @@ def describe(index, value):
 
 # UI logic
 st.set_page_config(page_title="Status Dashboard", layout="centered")
-st.title("🧠 Status Dashboard")
+st.title("🧠")
 
 # Compact instruction
 st.caption("Set status below. Tap Save to update.")
