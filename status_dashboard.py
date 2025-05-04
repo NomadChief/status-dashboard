@@ -14,14 +14,30 @@ sheet = client.open_by_key("1j7fEEf6jw8UcXcGlbgnE5BoxoP58wDRWCLr1XQgi-jM").sheet
 
 # Read values from the sheet
 data = sheet.get_all_records()
+if not data or 'Index' not in data[0] or 'Value' not in data[0]:
+    st.error("Sheet must have 'Index' and 'Value' headers.")
+    st.stop()
 index_values = {row['Index']: row['Value'] for row in data}
 
+
+# Color scale
+def colorize(value):
+    if value <= 2:
+        return "🔴"
+    elif value <= 5:
+        return "🟡"
+    elif value <= 8:
+        return "🟢"
+    else:
+        return "🔵"
+
 # UI logic
-st.title("🧠 Vox's Status Dashboard")
+st.title("🧠 Status Dashboard")
 new_values = {}
 for index in index_values:
-    st.subheader(index)
+    st.subheader(f"🔷 {index}")
     value = st.slider(index, 0, 10, index_values[index])
+    st.write(f"{colorize(value)} **{describe(index, value)}**")
     new_values[index] = value
 
 if st.button("💾 Save"):
@@ -57,34 +73,4 @@ def describe(index, value):
 
     return all_desc[index][value]
 
-# Color scale
-def colorize(value):
-    if value <= 2:
-        return "🔴"
-    elif value <= 5:
-        return "🟡"
-    elif value <= 8:
-        return "🟢"
-    else:
-        return "🔵"
-
-# Sliders and outputs
-st.subheader("🔷 Mood Status")
-mood = st.slider("Mood Status (0=Depressed, 10=Mania)", 0, 10, 5)
-st.write(f"{colorize(mood)} **{describe('Mood', mood)}**")
-
-st.subheader("🔷 Autistic Battery")
-battery = st.slider("Autistic Battery (0=Shutdown, 10=Fully Engaged)", 0, 10, 5)
-st.write(f"{colorize(battery)} **{describe('Autistic Battery', battery)}**")
-
-st.subheader("🔷 Emotional State")
-emotion = st.slider("Emotional State (0=Raw, 10=Safe/Engaged)", 0, 10, 5)
-st.write(f"{colorize(emotion)} **{describe('Emotional State', emotion)}**")
-
-st.subheader("🔷 Physical Pain")
-pain = st.slider("Physical Pain (0=None, 10=Max)", 0, 10, 3)
-st.write(f"{colorize(pain)} **{describe('Physical Pain', pain)}**")
-
-st.markdown("---")
-st.caption("🔁 Adjust any time. This dashboard updates in real time.")
 
